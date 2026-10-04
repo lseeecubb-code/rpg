@@ -1,0 +1,584 @@
+/* =====================================================================
+   THE LAST SAVE: plain terminal, cosmic-dread palette
+   Void black, pale divine gold, crimson for harm, violet for the beyond.
+   No window chrome: just a header line, the text, a prompt, a footer.
+   ===================================================================== */
+
+:root {
+  color-scheme: dark;
+
+  --void: #000;
+  --void-2: #000;
+  --line: #1c1730;
+
+  --text: #cdc6dc;
+  --text-strong: #f1ecfa;
+  --muted: #7a7191;
+  --faint: #463f5c;
+
+  --gold: #e9cf86;      /* divine light */
+  --gold-hot: #fff1c4;
+  --crimson: #d4364f;   /* harm, danger */
+  --crimson-hot: #ff6b7e;
+  --violet: #a37cff;    /* the beyond */
+  --green: #7ee0b0;
+  --blue: #7fb6ff;
+  --cyan: #8ff0e4;
+  --ember: #ff9a5c;
+
+  --mono: ui-monospace, "Cascadia Code", "JetBrains Mono", "SF Mono", "Fira Code", Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #000; }
+
+body {
+  font-family: var(--mono);
+  color: var(--text);
+  background: #000;
+}
+
+/* ---------- the terminal fills the window ---------- */
+
+.terminal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1100px, 100%);
+  height: 100vh;
+  height: 100dvh;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #000;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+/* a few distant stars; barely there */
+.terminal::before { display: none; }
+
+
+/* faint scanlines + dark corners */
+.terminal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 2px, #00000014 3px),
+    radial-gradient(ellipse at center, transparent 65%, #00000070 100%);
+}
+
+.terminal > * { position: relative; z-index: 1; }
+.terminal > .terminal-corruption { position: absolute; z-index: 8; }
+
+/* ---------- header: one quiet line ---------- */
+
+.bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 12px 18px 10px;
+  border-bottom: 1px solid var(--line);
+  background: #000;
+}
+.brand-copy { display: flex; align-items: baseline; gap: 14px; min-width: 0; }
+.title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  color: var(--gold);
+  text-shadow: 0 0 14px #e9cf8666;
+  white-space: nowrap;
+}
+.edition { font-size: 10px; letter-spacing: 0.18em; color: var(--faint); white-space: nowrap; }
+
+.toolbar { display: flex; align-items: baseline; gap: 6px; margin-left: auto; }
+
+button {
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  padding: 3px 8px;
+  transition: color 0.15s ease, border-color 0.15s ease, text-shadow 0.15s ease;
+}
+button:hover:not(:disabled) {
+  color: var(--gold-hot);
+  border-bottom-color: var(--gold);
+  text-shadow: 0 0 10px #e9cf8688;
+}
+button:focus-visible { outline: 1px solid var(--gold); outline-offset: 2px; }
+
+.music-volume { display: flex; align-items: center; gap: 6px; padding: 0 8px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+#musicVolume { width: 70px; cursor: pointer; accent-color: var(--gold); }
+#musicVolumeValue { width: 30px; text-align: right; color: var(--faint); }
+
+/* ---------- game text ---------- */
+
+#screen {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px 22px;
+  font-size: 15px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: text;
+  color: var(--text);
+  scrollbar-width: thin;
+  scrollbar-color: #3a3057 transparent;
+}
+#screen:focus { outline: none; }
+#screen::-webkit-scrollbar { width: 8px; }
+#screen::-webkit-scrollbar-thumb { background: #2a2342; border-radius: 4px; }
+#screen::-webkit-scrollbar-thumb:hover { background: #473a72; }
+#screen ::selection { background: #a37cff44; color: var(--text-strong); }
+
+/* ---------- prompt ---------- */
+
+.input-row {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 22px;
+  border-top: 1px solid var(--line);
+  background: #000;
+}
+.prompt { user-select: none; font-weight: 700; color: var(--gold); text-shadow: 0 0 10px #e9cf8688; }
+#command {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 0;
+  font: inherit;
+  font-size: 15px;
+  color: var(--text-strong);
+  caret-color: var(--gold);
+  background: transparent;
+  border: 0;
+  outline: 0;
+}
+#command::placeholder { color: var(--faint); }
+
+/* ---------- combo timer ---------- */
+
+.combo-timer {
+  flex: 0 0 auto;
+  padding: 5px 22px;
+  font-size: 0.96em;
+  font-weight: 700;
+  color: var(--gold);
+  border-top: 1px solid var(--line);
+  border-left: 2px solid var(--gold);
+  background: linear-gradient(90deg, #e9cf8618, transparent 70%);
+}
+.combo-timer[hidden] { display: none; }
+.combo-bar-fill { color: var(--gold-hot); text-shadow: 0 0 8px #e9cf8699; }
+.combo-bar-empty { color: #3d3552; }
+.combo-timer.urgent { color: var(--crimson-hot); border-left-color: var(--crimson); background: linear-gradient(90deg, #d4364f22, transparent 70%); animation: pulse 0.5s ease-in-out infinite; }
+.combo-timer.urgent .combo-bar-fill { color: var(--crimson-hot); text-shadow: 0 0 8px #d4364f99; }
+
+/* ---------- footer ---------- */
+
+.terminal-footer {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 6px 18px 8px;
+  border-top: 1px solid var(--line);
+  background: #000;
+}
+.footer-settings { padding: 2px 8px; font-size: 11px; white-space: nowrap; color: var(--muted); }
+.footer-settings.is-loading { color: var(--gold); }
+.footer-settings.is-loading::before { content: "…"; margin-right: 4px; animation: pulse 0.9s ease-in-out infinite; }
+.footer-settings.is-unavailable { color: var(--crimson-hot); }
+.footer-settings:disabled { cursor: wait; }
+.footer-meta { flex: 1; min-width: 0; display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
+.help, .version { padding: 0; font-size: 10px; white-space: nowrap; color: var(--faint); }
+.version { letter-spacing: 0.14em; }
+
+/* ---------- colours for what the game prints ---------- */
+
+.line { animation: line-in 0.22s ease-out both; }
+@keyframes line-in { from { opacity: 0; } to { opacity: 1; } }
+
+.fx-hurt   { color: var(--crimson-hot); font-weight: 700; }
+.fx-hit    { color: var(--gold); }
+.fx-crit   { color: var(--gold-hot); font-weight: 800; text-shadow: 0 0 12px #e9cf86bb; }
+.fx-parry  { color: var(--blue); font-weight: 700; }
+.fx-dodge  { color: var(--cyan); }
+.fx-heal   { color: var(--green); }
+.fx-status { color: var(--violet); }
+.fx-loot   { color: var(--gold); }
+.fx-dim    { color: var(--faint); }
+.fx-can    { color: var(--green); }
+.fx-cant   { color: #a8566a; }
+.fx-turn-player { color: var(--gold);        font-weight: 800; letter-spacing: 0.06em; }
+.fx-turn-enemy  { color: var(--crimson-hot); font-weight: 800; letter-spacing: 0.06em; }
+
+/* big moments: a thin rule on the left, nothing more */
+.fx-chapter, .fx-levelup, .fx-win, .fx-lose, .fx-encounter {
+  display: block;
+  margin: 8px 0;
+  padding: 2px 0 2px 12px;
+  font-weight: 800;
+  border-left: 2px solid currentColor;
+}
+.fx-chapter   { color: var(--violet);  letter-spacing: 0.08em; text-shadow: 0 0 16px #a37cff88; }
+.fx-levelup   { color: var(--gold-hot); text-shadow: 0 0 14px #e9cf86aa; }
+.fx-win       { color: var(--gold);     text-shadow: 0 0 12px #e9cf8688; }
+.fx-lose      { color: var(--crimson);  text-shadow: 0 0 14px #d4364f88; }
+.fx-encounter { color: var(--ember); }
+
+.fx-warning { color: var(--ember); font-weight: 800; animation: line-in 0.22s ease-out both, pulse 0.7s ease-in-out 3; }
+.fx-glitch  { color: var(--cyan); animation: line-in 0.22s ease-out both, glitch 0.5s steps(2) 2; }
+
+.fx-intent-head { color: var(--crimson-hot); font-weight: 800; letter-spacing: 0.16em; }
+.fx-intent-main { color: #ffd3c4; font-weight: 700; }
+
+.fx-reward-feed {
+  display: block;
+  margin: 1px 0;
+  padding: 1px 0 1px 10px;
+  font-size: 0.96em;
+  font-weight: 600;
+  text-align: left;
+  border-left: 2px solid #6b5d34;
+}
+.reward-coin  { color: #b4e394; }
+.reward-xp    { color: var(--gold); }
+.reward-item  { color: #cdb1ee; }
+.reward-combo { color: var(--ember); }
+
+/* HP / energy bars */
+.bar-good   { color: #6fe0a6; }
+.bar-warn   { color: var(--gold); }
+.bar-low    { color: var(--crimson-hot); text-shadow: 0 0 8px #d4364f77; }
+.bar-energy { color: var(--violet); text-shadow: 0 0 8px #a37cff55; }
+.bar-empty  { color: #2b2540; }
+
+@keyframes pulse { 50% { opacity: 0.45; } }
+@keyframes glitch {
+  0%   { text-shadow: 2px 0 #ff2e63, -2px 0 #08d9d6; transform: translateX(-2px); }
+  50%  { text-shadow: -2px 0 #ff2e63, 2px 0 #08d9d6; transform: translateX(2px); }
+  100% { text-shadow: none; transform: none; }
+}
+
+/* ---------- screen shake, flash, floating numbers (effects.js) ---------- */
+
+.shake        { animation: shake 0.25s linear; }
+.shake-strong { animation: shake 0.45s linear; }
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 2px); }
+  40% { transform: translate(5px, -3px); }
+  60% { transform: translate(-4px, 3px); }
+  80% { transform: translate(3px, -2px); }
+}
+.fx-flash { position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 5; }
+.fx-flash.on { animation: flash 0.45s ease-out; }
+@keyframes flash { 0% { opacity: 1; } 100% { opacity: 0; } }
+
+.fx-float { position: absolute; z-index: 6; pointer-events: none; font-size: 26px; font-weight: 800; animation: float-up 0.82s ease-out forwards; }
+.fx-float.hurt { color: var(--crimson-hot); text-shadow: 0 0 12px #a00000, 0 2px 0 #000; }
+.fx-float.hit  { color: var(--gold); text-shadow: 0 0 10px #6a4a00, 0 2px 0 #000; }
+.fx-float.crit { color: var(--gold-hot); font-size: 42px; text-shadow: 0 0 18px #e9cf86, 0 2px 0 #000; }
+@keyframes float-up {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.7); }
+  15%  { opacity: 1; transform: translateY(0) scale(1.15); }
+  100% { opacity: 0; transform: translateY(-60px) scale(1); }
+}
+
+/* ---------- accessibility options (set by the settings menu) ---------- */
+
+body.access-large #screen,
+body.access-large #command { font-size: 19px; line-height: 1.6; }
+body.access-spacing #screen { line-height: 1.85; letter-spacing: 0.025em; }
+body.access-reduced-flash .terminal::after { opacity: 0.5; }
+body.access-reduced-flash .fx-glitch { animation: none !important; text-shadow: none !important; }
+body.access-reduced-flash .fx-flash { display: none !important; }
+body.access-reduced-flash .shake,
+body.access-reduced-flash .shake-strong { animation: none !important; }
+body.access-reduced-flash .boss-attack-scene,
+body.access-reduced-flash .boss-attack-scene * { animation: none !important; }
+body.access-reduced-flash .boss-attack-scene::before { opacity: 0.72; }
+body.access-reduced-flash .fx-intent-head,
+body.access-reduced-flash .boss-attack-mark { text-shadow: none !important; }
+body.access-reduced-motion *,
+body.access-reduced-motion *::before,
+body.access-reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .line, .shake, .shake-strong, .fx-warning, .fx-glitch, .combo-timer.urgent { animation: none; }
+  .footer-settings.is-loading::before { animation: none; }
+}
+
+/* ---------- small screens ---------- */
+
+@media (max-width: 700px) {
+  .terminal { border: 0; }
+  .bar { flex-wrap: wrap; gap: 4px 10px; padding: 9px 12px 7px; }
+  .edition { display: none; }
+  .toolbar { gap: 2px; }
+  button { padding: 3px 6px; font-size: 10px; }
+  #musicVolume { width: 54px; }
+  #musicVolumeValue { display: none; }
+  #screen { padding: 12px 14px; font-size: 13.5px; }
+  .input-row { padding: 8px 14px; }
+  .terminal-footer { flex-wrap: wrap; gap: 2px 8px; padding: 5px 12px 7px; }
+  .footer-meta { flex-direction: column; align-items: flex-end; gap: 1px; }
+  .help, .version { font-size: 9px; }
+}
+
+/* =====================================================================
+   Effect scenes triggered by effects.js (boss attacks, reality cut,
+   corruption). Unchanged from the original.
+   ===================================================================== */
+
+  .terminal-corruption {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+  }
+  .terminal-corruption::before,
+  .terminal-corruption::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+  }
+  .terminal.terminal-corrupted.corrupt-glitch { animation: terminal-jitter 0.11s steps(2) 7; }
+  .terminal.terminal-corrupted.corrupt-glitch #screen { text-shadow: 1px 0 #aaa, -1px 0 #555; }
+  .terminal-corrupted.corrupt-glitch .terminal-corruption { opacity: 1; }
+  .corrupt-glitch .terminal-corruption::before {
+    opacity: 0.18;
+    background: repeating-linear-gradient(to bottom, transparent 0 5px, #eee 6px, transparent 7px 11px);
+    animation: scan-static 0.16s steps(3) infinite;
+  }
+  .terminal.terminal-corrupted.corrupt-fracture { animation: terminal-jitter 0.14s steps(2) 5; }
+  .corrupt-fracture .terminal-corruption { opacity: 1; }
+  .corrupt-fracture .terminal-corruption::before {
+    opacity: 0.62;
+    background:
+      linear-gradient(112deg, transparent 0 48%, #eee 48.15%, transparent 48.45%),
+      linear-gradient(72deg, transparent 0 52%, #aaa 52.12%, transparent 52.35%),
+      linear-gradient(152deg, transparent 0 43%, #888 43.1%, transparent 43.35%);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+  .corrupt-fracture .terminal-corruption::after {
+    opacity: 0.38;
+    background: linear-gradient(28deg, transparent 0 66%, #eee 66.1%, transparent 66.35%);
+  }
+  .terminal.terminal-corrupted.corrupt-tear { animation: terminal-jitter 0.09s steps(2) 9; }
+  .corrupt-tear .terminal-corruption { opacity: 1; }
+  .corrupt-tear .terminal-corruption::before {
+    opacity: 0.22;
+    background: repeating-linear-gradient(to bottom, transparent 0 35px, #ddd 36px 38px, transparent 39px 61px);
+    animation: tear-shift 0.32s steps(2) 8;
+  }
+  .corrupt-tear #screen { animation: text-slip 0.22s steps(2) 7; }
+  @keyframes terminal-jitter {
+    0%, 100% { transform: translate(0); }
+    25% { transform: translate(2px, -1px); }
+    50% { transform: translate(-2px, 1px); }
+    75% { transform: translate(1px, 1px); }
+  }
+  @keyframes scan-static {
+    50% { transform: translateY(3px); }
+  }
+  @keyframes tear-shift {
+    50% { transform: translateX(9px) skewY(-1deg); }
+  }
+  @keyframes text-slip {
+    50% { transform: translateX(5px); clip-path: inset(35% 0 38%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .terminal.terminal-corrupted, .corrupt-glitch .terminal-corruption::before,
+    .corrupt-tear .terminal-corruption::before, .corrupt-tear #screen { animation: none; }
+  }
+
+  /* The Last Save opens a brief, original terminal split and void effect. */
+  .last-save-cut {
+    position: absolute;
+    inset: 0;
+    z-index: 12;
+    overflow: hidden;
+    pointer-events: none;
+    background: #000;
+    animation: last-save-cut-fade 2600ms ease-in forwards;
+  }
+  .last-save-cut .cut-half {
+    position: absolute;
+    top: 0;
+    width: 50.5%;
+    height: 100%;
+    background: linear-gradient(90deg, #050505, #111 94%, #050505);
+    box-shadow: 0 0 24px #b8c8ff55;
+    will-change: transform;
+  }
+  .last-save-cut .cut-half-left {
+    left: 0;
+    border-right: 1px solid #c9d5ff;
+    animation: last-save-left-open 2600ms cubic-bezier(.7, 0, .2, 1) forwards;
+  }
+  .last-save-cut .cut-half-right {
+    right: 0;
+    border-left: 1px solid #c9d5ff;
+    animation: last-save-right-open 2600ms cubic-bezier(.7, 0, .2, 1) forwards;
+  }
+  .last-save-cut .cut-seam {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #f4f6ff;
+    box-shadow: 0 0 8px 2px #c2d2ff, 0 0 28px 6px #8ca6ff;
+    transform: scaleY(0);
+    transform-origin: center;
+    animation: last-save-seam 700ms steps(2, end) forwards;
+  }
+  .last-save-cut .cut-void {
+    position: absolute;
+    z-index: 3;
+    left: 50%;
+    top: 50%;
+    width: clamp(110px, 24vw, 300px);
+    height: clamp(90px, 34vh, 260px);
+    background: #000;
+    border: 1px solid #68708a;
+    box-shadow: 0 0 0 2px #000, 0 0 24px #8a9ed844;
+    transform: translate(-50%, -50%) scale(.08);
+    opacity: 0;
+    animation: last-save-void 2600ms cubic-bezier(.16, .8, .28, 1) forwards;
+  }
+  .last-save-cut .cut-hash-field {
+    position: absolute;
+    z-index: 4;
+    inset: 0;
+    color: #e7e9f2;
+    text-shadow: 0 0 7px #c3d2ff;
+    font: 700 clamp(13px, 2vw, 24px)/1 Consolas, "Courier New", monospace;
+  }
+  .last-save-cut .cut-glyph {
+    position: absolute;
+    opacity: 0;
+    animation: last-save-glyph 900ms steps(2, end) var(--glyph-delay, 0ms) 2;
+  }
+  @keyframes last-save-cut-fade {
+    0%, 72% { opacity: 1; }
+    100% { opacity: 0; visibility: hidden; }
+  }
+  @keyframes last-save-left-open {
+    0%, 24% { transform: translateX(0); }
+    44% { transform: translate(-3%, -1%); }
+    70%, 100% { transform: translate(-112%, -2%); }
+  }
+  @keyframes last-save-right-open {
+    0%, 24% { transform: translateX(0); }
+    44% { transform: translate(3%, 1%); }
+    70%, 100% { transform: translate(112%, 2%); }
+  }
+  @keyframes last-save-seam {
+    0% { transform: scaleY(0); opacity: 0; }
+    20% { transform: scaleY(1); opacity: 1; }
+    70%, 100% { transform: scaleY(1); opacity: 0; }
+  }
+  @keyframes last-save-void {
+    0%, 24% { opacity: 0; transform: translate(-50%, -50%) scale(.08); }
+    42% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+    58%, 78% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(.96); }
+  }
+  @keyframes last-save-glyph {
+    0% { opacity: 0; transform: translate(0, -12px) skewX(-18deg); }
+    18%, 65% { opacity: .92; }
+    100% { opacity: 0; transform: translate(var(--glyph-drift, 8px), 34px) skewX(12deg); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .last-save-cut, .last-save-cut .cut-half-left, .last-save-cut .cut-half-right,
+    .last-save-cut .cut-seam, .last-save-cut .cut-void, .last-save-cut .cut-glyph {
+      animation: none !important;
+    }
+    .last-save-cut { opacity: 1; }
+    .last-save-cut .cut-seam { transform: scaleY(1); }
+    .last-save-cut .cut-void { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .last-save-cut .cut-glyph { opacity: .7; }
+  }
+  /* Original boss signature-attack cutscenes. */
+  .boss-attack-scene{position:absolute;inset:0;z-index:14;overflow:hidden;pointer-events:none;background:#020307ef;isolation:isolate}
+  .boss-attack-scene::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,#28334a55,#020307 72%);animation:attack-scene-flash 2.25s ease-out both}
+  .boss-attack-mark{position:absolute;display:grid;place-items:center;color:#f2f5ff;text-shadow:0 0 10px currentColor,0 0 26px currentColor;font-weight:900;line-height:1;user-select:none;will-change:transform,opacity}
+  .attack-logo-fall .boss-attack-mark{width:30%;min-height:17%;padding:8px;border:1px solid #e5e9ff9c;background:linear-gradient(145deg,#121722f5,#050609f5);box-shadow:0 0 18px #c8d3ff66,inset 0 0 16px #fff2;color:#f4f5ff;font-size:clamp(10px,1.6vw,18px);letter-spacing:.08em;text-align:center;animation:boss-logo-fall 2250ms cubic-bezier(.5,0,.8,.5) var(--attack-delay,0ms) both}
+  .attack-crown-shards .boss-attack-mark{color:#ffd36a;font-size:clamp(22px,6vw,72px);animation:attack-shard-fall 1800ms ease-in var(--attack-delay,0ms) both}
+  .attack-moon-pounce .boss-attack-mark{color:#b7d8ff;font-size:clamp(34px,10vw,110px);animation:attack-swipe 1450ms cubic-bezier(.2,.7,.3,1) var(--attack-delay,0ms) both}
+  .attack-core-eruption .boss-attack-mark{color:#ff9a58;font-size:clamp(18px,4vw,48px);animation:attack-erupt 1900ms ease-out var(--attack-delay,0ms) both}
+  .attack-whiteout .boss-attack-mark{color:#dff6ff;font-size:clamp(20px,5vw,60px);animation:attack-snowfall 1900ms linear var(--attack-delay,0ms) both}
+  .attack-cinder-collapse .boss-attack-mark{color:#ff854d;font-size:clamp(16px,4vw,42px);animation:attack-ember 2100ms ease-in var(--attack-delay,0ms) both}
+  .attack-page-storm .boss-attack-mark{color:#ead9ae;font-size:clamp(22px,4vw,48px);animation:attack-page 1900ms ease-in-out var(--attack-delay,0ms) both}
+  .attack-redline-slice .boss-attack-mark{left:-10%;width:120%;height:3px;background:#ff3434;box-shadow:0 0 10px #ff3434,0 0 30px #ff2020;animation:attack-redline 1350ms steps(2,end) var(--attack-delay,0ms) both}
+  .attack-void-pulse .boss-attack-mark{color:#d8d9e5;font-size:clamp(16px,3vw,34px);animation:attack-void-glyph 1800ms steps(2,end) var(--attack-delay,0ms) both}
+  .attack-dragon-flame .boss-attack-mark{color:#ff8b4a;font-size:clamp(18px,4vw,52px);animation:attack-flame-rain 2050ms ease-in var(--attack-delay,0ms) both}
+  .attack-ground-rift .boss-attack-mark,.attack-earth-shatter .boss-attack-mark{color:#d6b58a;font-size:clamp(22px,5vw,64px);animation:attack-rift 1850ms ease-out var(--attack-delay,0ms) both}
+  .attack-dragon-roar .boss-attack-mark,.attack-ogre-roar .boss-attack-mark{color:#ffd76a;font-size:clamp(14px,3vw,38px);animation:attack-roar 1650ms ease-out var(--attack-delay,0ms) both}
+  .attack-wing-storm .boss-attack-mark{color:#d7edff;font-size:clamp(20px,4vw,54px);animation:attack-wing 1650ms cubic-bezier(.2,.7,.3,1) var(--attack-delay,0ms) both}
+  .attack-cataclysm .boss-attack-mark,.attack-godfall .boss-attack-mark{color:#fff0a8;font-size:clamp(18px,4vw,54px);animation:attack-cataclysm 2300ms ease-in var(--attack-delay,0ms) both}
+  .attack-soul-bolt .boss-attack-mark,.attack-soul-grip .boss-attack-mark,.attack-soul-drain .boss-attack-mark{color:#b8a0ff;font-size:clamp(18px,4vw,50px);animation:attack-soul 1800ms ease-in-out var(--attack-delay,0ms) both}
+  .attack-plague-cloud .boss-attack-mark,.attack-corruption-wave .boss-attack-mark{color:#8ce59f;font-size:clamp(14px,3vw,40px);animation:attack-cloud 1950ms ease-out var(--attack-delay,0ms) both}
+  .attack-stone-fist .boss-attack-mark{color:#d4c2a6;font-size:clamp(24px,5vw,66px);animation:attack-fist 1600ms cubic-bezier(.2,.9,.2,1) var(--attack-delay,0ms) both}
+  .attack-blood-bite .boss-attack-mark{color:#ff6179;font-size:clamp(18px,4vw,48px);animation:attack-blood 1700ms ease-out var(--attack-delay,0ms) both}
+  .attack-bat-swarm .boss-attack-mark{color:#b7a4df;font-size:clamp(18px,3vw,42px);animation:attack-swarm 1800ms ease-in-out var(--attack-delay,0ms) both}
+  .attack-hellfire .boss-attack-mark{color:#ff754f;font-size:clamp(18px,4vw,50px);animation:attack-flame-rain 2100ms ease-in var(--attack-delay,0ms) both}
+  .attack-void-curse .boss-attack-mark,.attack-name-erasure .boss-attack-mark,.attack-missing-texture .boss-attack-mark,.attack-invalid-state .boss-attack-mark,.attack-out-of-bounds .boss-attack-mark{color:#c7c9d8;font-size:clamp(14px,3vw,38px);animation:attack-glitch-fall 1900ms steps(2,end) var(--attack-delay,0ms) both}
+  .attack-frenzy .boss-attack-mark,.attack-berserker-swing .boss-attack-mark,.attack-hero-slash .boss-attack-mark{color:#ffe08a;font-size:clamp(20px,5vw,60px);animation:attack-slash-storm 1500ms ease-out var(--attack-delay,0ms) both}
+  .attack-royal-decree .boss-attack-mark,.attack-watcher-gaze .boss-attack-mark,.attack-counterfactual .boss-attack-mark,.attack-index-beam .boss-attack-mark,.attack-sealed-vault .boss-attack-mark,.attack-save-pulse .boss-attack-mark{color:#e8dcff;font-size:clamp(14px,3vw,42px);animation:attack-lock 1900ms ease-in-out var(--attack-delay,0ms) both}
+  .attack-memory-flash .boss-attack-mark{color:#9fe8ff;font-size:clamp(14px,3vw,40px);animation:attack-memory 1750ms steps(3,end) var(--attack-delay,0ms) both}
+  .attack-fourth-wall .boss-attack-mark{color:#8ff0e4;font-size:clamp(12px,2vw,30px);animation:attack-fourth 1950ms steps(2,end) var(--attack-delay,0ms) both}
+  .attack-page-erasure .boss-attack-mark,.attack-ink-storm .boss-attack-mark,.attack-author-decree .boss-attack-mark{color:#e7b4ff;font-size:clamp(14px,3vw,42px);animation:attack-page-void 2050ms ease-in-out var(--attack-delay,0ms) both}
+  .attack-hero-finale .boss-attack-mark{color:#fff4bf;font-size:clamp(20px,5vw,64px);animation:attack-finale 2100ms cubic-bezier(.2,.9,.2,1) var(--attack-delay,0ms) both}
+  @keyframes attack-flame-rain{0%{opacity:0;transform:translate(var(--attack-drift,0),-30vh) scale(.4) rotate(0)}20%{opacity:1}100%{opacity:0;transform:translate(calc(var(--attack-drift,0)*-1),115vh) scale(1.4) rotate(220deg)}}
+  @keyframes attack-rift{0%{opacity:0;transform:scaleX(.1) translateY(20vh) rotate(var(--attack-tilt,0deg))}25%,60%{opacity:1;transform:scaleX(1.2) translateY(0) rotate(0)}100%{opacity:0;transform:scaleX(.2) translateY(-15vh) rotate(-10deg)}}
+  @keyframes attack-roar{0%{opacity:0;transform:scale(.15)}25%,55%{opacity:1;transform:scale(1.1)}100%{opacity:0;transform:scale(2.4)}}
+  @keyframes attack-wing{0%{opacity:0;transform:translate(-85vw,25vh) rotate(-25deg) scale(.6)}25%,55%{opacity:1}100%{opacity:0;transform:translate(95vw,-25vh) rotate(20deg) scale(1.35)}}
+  @keyframes attack-cataclysm{0%{opacity:0;transform:translateY(-55vh) scale(.2)}28%{opacity:1}62%{opacity:.9;transform:translateY(5vh) scale(1.15)}100%{opacity:0;transform:translateY(95vh) scale(1.8) rotate(180deg)}}
+  @keyframes attack-soul{0%{opacity:0;transform:translate(0,30vh) scale(.2)}25%,55%{opacity:1}100%{opacity:0;transform:translate(calc(var(--attack-drift,20px)*-1),-45vh) scale(1.5)}}
+  @keyframes attack-cloud{0%{opacity:0;transform:scale(.2)}30%,65%{opacity:.8}100%{opacity:0;transform:scale(3) translateY(-10vh)}}
+  @keyframes attack-fist{0%{opacity:0;transform:translate(0,-50vh) scale(.25) rotate(-20deg)}28%,55%{opacity:1}100%{opacity:0;transform:translate(var(--attack-drift,20px),40vh) scale(1.5) rotate(35deg)}}
+  @keyframes attack-blood{0%{opacity:0;transform:translate(50vw,10vh) scale(.2)}25%,55%{opacity:1}100%{opacity:0;transform:translate(-45vw,-10vh) scale(1.3)}}
+  @keyframes attack-swarm{0%{opacity:0;transform:translate(-20vw,20vh) scale(.2)}25%{opacity:1}100%{opacity:0;transform:translate(25vw,-25vh) rotate(540deg) scale(1.3)}}
+  @keyframes attack-glitch-fall{0%{opacity:0;transform:translateY(-35vh) skewX(15deg) scale(.5)}30%,55%{opacity:.95}100%{opacity:0;transform:translateY(45vh) skewX(-15deg) scale(1.4)}}
+  @keyframes attack-slash-storm{0%{opacity:0;transform:translate(-60vw,20vh) rotate(-35deg) scale(.5)}25%,55%{opacity:1}100%{opacity:0;transform:translate(65vw,-20vh) rotate(40deg) scale(1.5)}}
+  @keyframes attack-lock{0%{opacity:0;transform:scale(.3) rotate(-8deg)}30%,65%{opacity:.95}100%{opacity:0;transform:scale(1.5) rotate(8deg)}}
+  @keyframes attack-memory{0%,100%{opacity:0;transform:translateX(-8px)}30%,60%{opacity:1;transform:translateX(8px)}75%{opacity:.3;transform:translateX(-3px)}}
+  @keyframes attack-fourth{0%{opacity:0;transform:translateX(-30vw)}35%,60%{opacity:1}100%{opacity:0;transform:translateX(35vw)}}
+  @keyframes attack-page-void{0%{opacity:0;transform:translateY(-55vh) rotate(-35deg) scale(.4)}25%,65%{opacity:.95}100%{opacity:0;transform:translateY(60vh) rotate(40deg) scale(1.5)}}
+  @keyframes attack-finale{0%{opacity:0;transform:translateY(-45vh) scale(.4)}25%,60%{opacity:1;transform:scale(1.1)}100%{opacity:0;transform:translateY(55vh) scale(1.7) rotate(45deg)}}
+  @keyframes attack-scene-flash{0%{opacity:0}8%,62%{opacity:1}100%{opacity:.12}}
+  @keyframes boss-logo-fall{0%,58%{opacity:1;transform:translateY(0) rotate(0) scale(1)}68%{opacity:.95;transform:translateY(8px) rotate(2deg) scale(1.03)}100%{opacity:0;transform:translateY(125vh) rotate(var(--attack-tilt,8deg)) scale(.82)}}
+  @keyframes attack-shard-fall{0%{opacity:0;transform:translate(0,-70vh) rotate(0) scale(.5)}22%,50%{opacity:1}100%{opacity:0;transform:translate(var(--attack-drift,30px),120vh) rotate(460deg) scale(1.2)}}
+  @keyframes attack-swipe{0%{opacity:0;transform:translate(-90vw,30vh) rotate(-32deg) scale(.55)}25%,55%{opacity:1}100%{opacity:0;transform:translate(100vw,-22vh) rotate(18deg) scale(1.35)}}
+  @keyframes attack-erupt{0%{opacity:0;transform:translateY(35vh) scale(.1)}25%,55%{opacity:1}100%{opacity:0;transform:translate(var(--attack-drift,20px),-90vh) scale(1.5) rotate(250deg)}}
+  @keyframes attack-snowfall{0%{opacity:0;transform:translate(var(--attack-drift,20px),-15vh) rotate(0)}20%,65%{opacity:.95}100%{opacity:0;transform:translate(calc(var(--attack-drift,20px)*-1),110vh) rotate(300deg)}}
+  @keyframes attack-ember{0%{opacity:0;transform:translateY(-70vh) scale(.4)}20%,55%{opacity:1}100%{opacity:0;transform:translate(var(--attack-drift,20px),115vh) scale(1.4) rotate(180deg)}}
+  @keyframes attack-page{0%{opacity:0;transform:translate(var(--attack-drift,20px),-80vh) rotate(-90deg)}18%,62%{opacity:.96}100%{opacity:0;transform:translate(calc(var(--attack-drift,20px)*-1),115vh) rotate(240deg)}}
+  @keyframes attack-redline{0%{opacity:0;transform:translateX(-20vw) scaleX(.1)}18%,62%{opacity:1;transform:translateX(0) scaleX(1)}100%{opacity:0;transform:translateX(20vw) scaleX(.2)}}
+  @keyframes attack-void-glyph{0%{opacity:0;transform:scale(.2) rotate(-30deg)}25%,65%{opacity:.9}100%{opacity:0;transform:translate(var(--attack-drift,20px),20vh) scale(1.6) rotate(90deg)}}
+  @media(prefers-reduced-motion:reduce){.boss-attack-scene::before,.boss-attack-mark{animation:none!important}.boss-attack-scene::before{opacity:.72}.boss-attack-mark{opacity:.8}}
